@@ -35,6 +35,12 @@
  *             code tree.
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif  // _GNU_SOURCE
+#include <sched.h>
+#include <unistd.h>
+
 #include "jni.h"
 #include "jni_util.h"
 #include "jvm.h"
@@ -42,6 +48,26 @@
 #include <nativehelper/JNIHelp.h>
 
 #include "nativehelper/jni_macros.h"
+
+JNIEXPORT jint JNICALL
+Runtime_availableProcessors(JNIEnv *env, jobject this)
+{
+#if defined(__linux__) && defined(_GNU_SOURCE)
+    int err;
+    cpu_set_t cpu_set;
+
+    CPU_ZERO(&cpu_set);
+    if ((err = sched_getaffinity(/* pid= */ 0, /* size= */ sizeof(cpu_set), /* cpuset= */ &cpu_set)) != 0) {
+        // Error in sched_getaffinity; return the number of configured cores instead
+        return sysconf(_SC_NPROCESSORS_CONF);
+    }
+
+    return CPU_COUNT(&cpu_set);
+#else
+    // No support for sched_getaffinity; return the number of configured cores instead
+    return sysconf(_SC_NPROCESSORS_CONF);
+#endif  // defined(__linux__) && defined(_GNU_SOURCE)
+}
 
 JNIEXPORT jlong JNICALL
 Runtime_freeMemory(JNIEnv *env, jobject this)
@@ -81,6 +107,7 @@ Runtime_nativeLoad(JNIEnv* env, jclass ignored, jstring javaFilename,
 }
 
 static JNINativeMethod gMethods[] = {
+  FAST_NATIVE_METHOD(Runtime, availableProcessors, "()I"),
   FAST_NATIVE_METHOD(Runtime, freeMemory, "()J"),
   FAST_NATIVE_METHOD(Runtime, totalMemory, "()J"),
   FAST_NATIVE_METHOD(Runtime, maxMemory, "()J"),

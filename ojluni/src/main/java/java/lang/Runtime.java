@@ -724,9 +724,8 @@ public class Runtime {
      *          machine; never smaller than one
      * @since 1.4
      */
-    public int availableProcessors() {
-        return (int) Libcore.os.sysconf(_SC_NPROCESSORS_CONF);
-    }
+    @FastNative
+    public native int availableProcessors();
 
     /**
      * Returns the amount of free memory in the Java Virtual Machine.
@@ -1028,7 +1027,7 @@ public class Runtime {
         // the behavior when we used to not pass the class.
         loadLibrary0(loader, null, libname);
     }
-    
+
     /**
      * Loads the shared library {@code libname} in the context of {@code loader} and
      * {@code callerClass}.
@@ -1037,9 +1036,9 @@ public class Runtime {
      *                       underlying linker to determine linker namespace. A {@code null}
      *                       value represents the boot class loader.
      * @param      fromClass the class that initiated the loading. Used when loader is
-     *                       {@code null} and ignored in all other cases. When used, it 
+     *                       {@code null} and ignored in all other cases. When used, it
      *                       determines the linker namespace from the class's .dex location.
-     *                       {@code null} indicates the default namespace for the boot 
+     *                       {@code null} indicates the default namespace for the boot
      *                       class loader.
      * @param      libname   the name of the library.
      */
